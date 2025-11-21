@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>2025 循序渐进计划</title>
+    <style>
+        :root {
+            --primary: #3b82f6; /* 蓝：推 */
+            --accent: #f97316; /* 橙：拉 */
+            --legs: #8b5cf6;    /* 紫：腿 */
+            --cardio: #eab308;  /* 黄：有氧 */
+            --success: #10b981;
+            --bg: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px 15px;
+            min-height: 100vh;
+        }
+
+        .container { max-width: 500px; margin: 0 auto; }
+
+        /* DASHBOARD */
+        .dashboard {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        .header-top {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
+        }
+
+        h1 { font-size: 1.2rem; margin: 0; color: var(--text-main); font-weight: 800; }
+        .badge { 
+            background: #eff6ff; color: var(--primary); padding: 4px 10px; border-radius: 20px; 
+            font-size: 0.75rem; font-weight: 700;
+        }
+
+        .stats-grid {
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;
+        }
+
+        .stat-card {
+            text-align: center; padding: 10px; background: #f8fafc; border-radius: 12px; border: 1px solid var(--border);
+        }
+
+        .stat-val { font-size: 1.4rem; font-weight: 800; color: var(--text-main); display: block; }
+        .stat-label { font-size: 0.7rem; color: var(--text-sub); }
+        
+        /* Progress Bar */
+        .progress-container { margin-top: 15px; }
+        .progress-info { display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 5px; color: var(--text-sub); }
+        .progress-bar-bg { height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden; }
+        .progress-bar-fill {
+            height: 100%; background: var(--primary); width: 0%; 
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 5px; position: relative; overflow: hidden;
+        }
+        .progress-bar-fill::after {
+            content: ''; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transform: translateX(-100%); animation: shimmer 2s infinite;
+        }
+        @keyframes shimmer { 100% { transform: translateX(100%); } }
+
+        /* CALENDAR */
+        .cal-nav {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 0 10px;
+        }
+        .month-title { font-size: 1.1rem; font-weight: 700; }
+        .nav-btn {
+            background: white; border: 1px solid var(--border); width: 32px; height: 32px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-sub);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .calendar {
+            background: var(--card-bg); border-radius: 20px; padding: 15px; box-shadow: var(--shadow);
+            display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;
+        }
+
+        .weekday { text-align: center; font-size: 0.7rem; color: #94a3b8; font-weight: 600; margin-bottom: 5px; }
+
+        .day {
+            aspect-ratio: 1; border-radius: 10px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 600;
+            position: relative; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; background: #f8fafc;
+        }
+        .day.today { border-color: var(--primary); background: #eff6ff; color: var(--primary); }
+        .day.disabled { opacity: 0.3; pointer-events: none; }
+        .day:active { transform: scale(0.95); }
+        .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 4px; transition: background 0.3s; }
+        
+        .day.done { background: #ecfdf5; color: var(--success); }
+        .day.done .dot { background: var(--success) !important; }
+
+        /* MODAL */
+        .modal-mask {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+            z-index: 99; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .modal-mask.active { opacity: 1; pointer-events: all; }
+
+        .modal {
+            background: var(--card-bg); width: 90%; max-width: 400px;
+            border-radius: 24px; padding: 25px;
+            transform: translateY(30px); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-height: 85vh; overflow-y: auto;
+        }
+        .modal-mask.active .modal { transform: translateY(0); }
+
+        .modal-header { margin-bottom: 20px; }
+        .modal-date { font-size: 0.85rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+        .modal-title { font-size: 1.5rem; font-weight: 800; margin: 5px 0; color: var(--text-main); }
+        
+        .workout-list { list-style: none; padding: 0; margin: 0 0 25px 0; }
+        
+        .workout-item { border-bottom: 1px solid var(--border); padding: 12px 0; }
+        
+        .item-header { display: flex; align-items: center; cursor: pointer; }
+        
+        .checkbox {
+            width: 22px; height: 22px; border: 2px solid var(--border); border-radius: 6px;
+            margin-right: 12px; display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; transition: all 0.2s;
+        }
+        .checkbox.checked { background: var(--primary); border-color: var(--primary); }
+        .checkbox.checked::after { content: '✓'; color: white; font-size: 14px; font-weight: bold; }
+
+        .item-name { flex: 1; font-weight: 500; color: var(--text-main); }
+        .info-icon { color: var(--primary); opacity: 0.6; font-size: 0.9rem; margin-left: 10px; }
+
+        .item-desc {
+            font-size: 0.85rem; color: var(--text-sub);
+            background: #f8fafc; padding: 10px; border-radius: 8px; margin-top: 8px;
+            display: none; line-height: 1.5;
+        }
+        .item-desc.show { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .action-btn {
+            width: 100%; padding: 16px; border-radius: 16px; border: none;
+            font-size: 1rem; font-weight: 700; cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .btn-done { background: var(--text-main); color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .btn-done:active { transform: scale(0.98); }
+        .btn-completed { background: var(--success); color: white; }
+
+        .close-icon {
+            position: absolute; top: 20px; right: 20px;
+            background: #f1f5f9; width: 30px; height: 30px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: #64748b; font-weight: bold;
+        }
+        
+        /* Tip Box */
+        .beginner-tip {
+            background: #fff7ed; border: 1px solid #ffedd5; color: #c2410c;
+            padding: 10px; border-radius: 8px; font-size: 0.8rem; margin-bottom: 15px;
+            display: flex; align-items: center; gap: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="dashboard">
+        <div class="header-top">
+            <div>
+                <div class="badge">2025 增肌刷脂</div>
+                <h1 style="margin-top:5px">坚持就是胜利</h1>
+            </div>
+            <div style="text-align:right">
+                <span style="font-size:2rem; display:block;">💪</span>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-val" id="daysLeft">--</span>
+                <span class="stat-label">剩余天数</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-val" id="streak">0</span>
+                <span class="stat-label">连续打卡</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-val" id="workoutsDone">0</span>
+                <span class="stat-label">已完成</span>
+            </div>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-info">
+                <span>总进度</span>
+                <span id="progressText">0%</span>
+            </div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progressBar"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="beginner-tip">
+        <span style="font-size:1.2em">💪</span>
+        <span><strong>加油加油！</span>
+    </div>
+
+    <div class="cal-nav">
+        <div class="nav-btn" onclick="changeMonth(-1)">❮</div>
+        <div class="month-title" id="monthLabel">...</div>
+        <div class="nav-btn" onclick="changeMonth(1)">❯</div>
+    </div>
+
+    <div class="calendar" id="calendarGrid">
+        <div class="weekday">日</div><div class="weekday">一</div><div class="weekday">二</div>
+        <div class="weekday">三</div><div class="weekday">四</div><div class="weekday">五</div><div class="weekday">六</div>
+        </div>
+    
+    <div style="text-align:center; margin-top:20px; font-size:0.75rem; color:#94a3b8;">
+        <span style="color:var(--primary)">●</span> 胸肩推 &nbsp; 
+        <span style="color:var(--accent)">●</span> 背二头 &nbsp; 
+        <span style="color:var(--legs)">●</span> 腿核心 &nbsp; 
+        <span style="color:var(--cardio)">●</span> 全身有氧 &nbsp;
+        <span style="color:#cbd5e1">●</span> 休息
+    </div>
+</div>
+
+<div class="modal-mask" id="modalMask" onclick="closeModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+        <div class="close-icon" onclick="closeModal()">✕</div>
+        
+        <div class="modal-header">
+            <div class="modal-date" id="mDate">...</div>
+            <h2 class="modal-title" id="mTitle">...</h2>
+            <p style="font-size:0.9rem; color:#64748b; margin:5px 0;" id="mSubtitle">...</p>
+        </div>
+
+        <ul class="workout-list" id="mList"></ul>
+
+        <button class="action-btn btn-done" id="mBtn" onclick="toggleDayFinish()">完成今日打卡</button>
+    </div>
+</div>
+
+<script>
+    // --- 核心配置 ---
+    const DB_KEY = 'fitness_plan_2025_v7'; // 更新版本号
+    const START_DATE_STR = "2025-11-21"; // 今天开始
+    const END_DATE_STR = "2026-01-31";
+    
+    // --- 训练内容库 (新手友好版) ---
+    const WORKOUTS = {
+        Day1: {
+            type: 'Day1',
+            title: "Day 1: 推类训练",
+            subtitle: "胸 / 肩 / 三头",
+            color: "var(--primary)",
+            exercises: [
+                { name: "胸推机 (Chest Press)", reps: "新手2组 / 进阶4组", desc: "调整座椅高度，握把与胸部中线齐平。发力推出，还原时控制速度。" },
+                { name: "上斜哑铃推举", reps: "新手2组 / 进阶3组", desc: "椅子调至30或45度。上举至手臂伸直但不要锁死肘关节。" },
+                { name: "蝴蝶机夹胸 (Pec Fly)", reps: "新手2组 / 进阶3组", desc: "保持手肘微屈，像抱大树一样合拢，感受胸肌内侧挤压。" },
+                { name: "坐姿肩推机", reps: "新手2组 / 进阶3组", desc: "推举过头顶。核心收紧，背部贴紧椅背，不要过度反弓腰部。" },
+                { name: "哑铃侧平举", reps: "新手2组 / 进阶3组", desc: "像倒水一样举起哑铃，大臂带动小臂，不要耸肩。" },
+                { name: "龙门架绳索下压", reps: "新手2组 / 进阶3组", desc: "大臂夹紧身体两侧不动，只动小臂向下压，练三头肌。" }
+            ]
+        },
+        Day2: {
+            type: 'Day2',
+            title: "Day 2: 拉类训练",
+            subtitle: "背 / 二头",
+            color: "var(--accent)",
+            exercises: [
+                { name: "高位下拉 (Lat Pulldown)", reps: "新手2组 / 进阶4组", desc: "宽握。下拉时挺胸，想着把横杆拉向锁骨，肘部向下向后。" },
+                { name: "坐姿划船 (Seated Row)", reps: "新手2组 / 进阶3组", desc: "脚蹬稳，背挺直。拉手柄至腹部，用力夹紧背部肩胛骨。" },
+                { name: "单臂哑铃划船", reps: "新手2组 / 进阶3组", desc: "一只手扶椅子，另一只手提拉哑铃。尽量把哑铃拉向髋部位置。" },
+                { name: "哑铃弯举", reps: "新手2组 / 进阶3组", desc: "站姿或坐姿。大臂固定不动，弯举哑铃挤压二头肌。" },
+                { name: "二头弯举机", reps: "新手1组 / 进阶2组", desc: "利用机器固定轨迹，榨干二头肌最后的力量。" }
+            ]
+        },
+        Day3: {
+            type: 'Day3',
+            title: "Day 3: 腿 & 核心",
+            subtitle: "全机器版 (安全高效)",
+            color: "var(--legs)",
+            exercises: [
+                { name: "腿举机 (Leg Press)", reps: "新手2组 / 进阶4组", desc: "双脚比肩宽。下放尽量深，蹬起时膝盖不要完全锁死（保留微屈）。" },
+                { name: "坐姿腿伸展 (Leg Ext)", reps: "新手2组 / 进阶3组", desc: "踢腿机。练大腿前侧，到顶端停顿1秒效果更好。" },
+                { name: "俯卧/坐姿腿弯举", reps: "新手2组 / 进阶3组", desc: "勾腿机。练大腿后侧。动作要慢，不要利用惯性甩。" },
+                { name: "臀推机 (Hip Thrust)", reps: "新手2组 / 进阶3组", desc: "如果没有机器，可以用哑铃放在髋部做臀桥。顶髋发力收紧臀部。" },
+                { name: "小腿提踵机", reps: "新手2组 / 进阶3组", desc: "练小腿。可以用腿举机做，也可以用站姿提踵机。" },
+                { name: "腹肌机 (Ab Machine)", reps: "新手2组 / 进阶3组", desc: "如果没有机器，做卷腹或悬垂举腿代替。" }
+            ]
+        },
+        Day4: {
+            type: 'Day4',
+            title: "Day 4: 轻全身 + 有氧",
+            subtitle: "综合消耗 & 心肺",
+            color: "var(--cardio)",
+            exercises: [
+                { name: "机器胸推 (轻重量)", reps: "2组 x 12次", desc: "保持肌肉活性，重量不需要太大。" },
+                { name: "坐姿划船 (轻重量)", reps: "2组 x 12次", desc: "注重收缩感，动作标准为主。" },
+                { name: "腿举机 (轻重量)", reps: "2组 x 12次", desc: "促进腿部血液循环。" },
+                { name: "哑铃肩推 (轻重量)", reps: "2组 x 12次", desc: "保持肩关节活动度。" },
+                { name: "跑步机爬坡", reps: "20-25分钟", desc: "坡度设置3-5，速度适中（快走状态），保持心率平稳。" }
+            ]
+        },
+        Rest: {
+            type: 'Rest',
+            title: "休息日",
+            subtitle: "恢复 / 营养",
+            color: "#cbd5e1",
+            exercises: [
+                { name: "彻底放松", reps: "全天", desc: "今天无需去健身房，给关节和神经放个假。" },
+                { name: "优质睡眠", reps: "8小时", desc: "肌肉在睡眠中修复生长。" }
+            ]
+        }
+    };
+
+    // 循环模式：Day1(推) → Day2(拉) → 休息 → Day3(腿) → 休息 → Day4(全身) → 休息
+    const CYCLE = ['Day1', 'Day2', 'Rest', 'Day3', 'Rest', 'Day4', 'Rest'];
+
+    // --- 逻辑与功能 ---
+    let viewDate = new Date();
+    let selectedDateStr = null;
+    let userData = JSON.parse(localStorage.getItem(DB_KEY)) || {};
+
+    function getLocalDateStr(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    
+    const START_DATE = new Date(START_DATE_STR);
+    const END_DATE = new Date(END_DATE_STR);
+
+    function getWorkoutType(dateStr) {
+        const d = new Date(dateStr);
+        const start = new Date(START_DATE_STR);
+        const diffTime = d - start;
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays < 0) return null;
+        // 使用 7 天循环
+        return CYCLE[diffDays % 7];
+    }
+
+    function saveData() {
+        localStorage.setItem(DB_KEY, JSON.stringify(userData));
+        renderDashboard();
+        renderCalendar();
+    }
+
+    function renderDashboard() {
+        const today = new Date();
+        const todayStr = getLocalDateStr(today);
+        
+        // 1. Days Left
+        const end = new Date(END_DATE_STR);
+        const diffTime = Math.max(0, end - today);
+        const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+        document.getElementById('daysLeft').innerText = daysLeft;
+
+        // 2. Progress & Streak
+        let totalPlanDays = 0;
+        let doneCount = 0;
+        let tempStreak = 0;
+        
+        let d = new Date(START_DATE_STR);
+        const endDateObj = new Date(END_DATE_STR);
+        
+        while (d <= endDateObj) {
+            const dStr = getLocalDateStr(d);
+            totalPlanDays++;
+            
+            if (userData[dStr] && userData[dStr].done) {
+                doneCount++;
+            }
+            
+            if (d <= today) {
+                if (userData[dStr] && userData[dStr].done) {
+                    tempStreak++;
+                } else if (dStr !== todayStr) {
+                    tempStreak = 0;
+                }
+            }
+            d.setDate(d.getDate() + 1);
+        }
+
+        document.getElementById('workoutsDone').innerText = doneCount;
+        document.getElementById('streak').innerText = tempStreak;
+        
+        const pct = totalPlanDays === 0 ? 0 : Math.round((doneCount / totalPlanDays) * 100);
+        document.getElementById('progressText').innerText = pct + "%";
+        document.getElementById('progressBar').style.width = pct + "%";
+    }
+
+    function renderCalendar() {
+        const year = viewDate.getFullYear();
+        const month = viewDate.getMonth();
+        document.getElementById('monthLabel').innerText = `${year}年 ${month + 1}月`;
+
+        const grid = document.getElementById('calendarGrid');
+        while (grid.children.length > 7) grid.removeChild(grid.lastChild);
+
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const startDay = firstDay.getDay(); 
+        const daysInMonth = lastDay.getDate();
+        const todayStr = getLocalDateStr(new Date());
+
+        for(let i=0; i<startDay; i++) { grid.appendChild(document.createElement('div')); }
+
+        for(let d=1; d<=daysInMonth; d++) {
+            const current = new Date(year, month, d);
+            const dateStr = getLocalDateStr(current);
+            const el = document.createElement('div');
+            el.className = 'day';
+            el.innerHTML = `<div>${d}</div>`;
+            
+            const startObj = new Date(START_DATE_STR);
+            const endObj = new Date(END_DATE_STR);
+
+            if (current < startObj || current > endObj) {
+                el.classList.add('disabled');
+            } else {
+                const type = getWorkoutType(dateStr);
+                const isDone = userData[dateStr]?.done;
+                
+                if (isDone) el.classList.add('done');
+                if (type) {
+                    const color = WORKOUTS[type].color;
+                    const dot = document.createElement('div');
+                    dot.className = 'dot';
+                    if (!isDone) dot.style.backgroundColor = color;
+                    el.appendChild(dot);
+                }
+                if (dateStr === todayStr) el.classList.add('today');
+                el.onclick = () => openModal(dateStr, type);
+            }
+            grid.appendChild(el);
+        }
+    }
+
+    function changeMonth(offset) {
+        viewDate.setMonth(viewDate.getMonth() + offset);
+        renderCalendar();
+    }
+
+    function openModal(dateStr, type) {
+        if (!type) return;
+        selectedDateStr = dateStr;
+        const data = WORKOUTS[type];
+        const record = userData[dateStr] || { items: [], done: false };
+
+        document.getElementById('mDate').innerText = dateStr;
+        document.getElementById('mTitle').innerText = data.title;
+        document.getElementById('mTitle').style.color = data.color;
+        document.getElementById('mSubtitle').innerText = data.subtitle;
+
+        const list = document.getElementById('mList');
+        list.innerHTML = '';
+        
+        data.exercises.forEach((ex, idx) => {
+            const isChecked = record.items[idx] ? 'checked' : '';
+            const li = document.createElement('li');
+            li.className = 'workout-item';
+            li.innerHTML = `
+                <div class="item-header" onclick="toggleDesc(this)">
+                    <div class="checkbox ${isChecked}" onclick="checkItem(event, ${idx}, this)"></div>
+                    <div class="item-name">${ex.name} <br><span style="font-size:0.75em;color:#94a3b8;font-weight:normal">${ex.reps}</span></div>
+                    <div class="info-icon">ⓘ</div>
+                </div>
+                <div class="item-desc">${ex.desc}</div>
+            `;
+            list.appendChild(li);
+        });
+
+        updateBtnState(record.done);
+        document.getElementById('modalMask').classList.add('active');
+    }
+
+    function closeModal(e) {
+        document.getElementById('modalMask').classList.remove('active');
+    }
+
+    function toggleDesc(headerDom) {
+        const desc = headerDom.nextElementSibling;
+        desc.classList.toggle('show');
+    }
+
+// 勾选单项（修改版：支持自动判定完成）
+    function checkItem(e, idx, checkboxDom) {
+        e.stopPropagation(); 
+        checkboxDom.classList.toggle('checked');
+        
+        // 1. 确保数据对象存在
+        if (!userData[selectedDateStr]) userData[selectedDateStr] = { items: [], done: false };
+        
+        // 2. 更新当前勾选状态
+        userData[selectedDateStr].items[idx] = checkboxDom.classList.contains('checked');
+        
+        // --- 新增代码 START ---
+        // 3. 检查是否所有动作都已勾选
+        const type = getWorkoutType(selectedDateStr);
+        if (type && WORKOUTS[type]) {
+            const totalExercises = WORKOUTS[type].exercises.length;
+            let allChecked = true;
+            
+            for (let i = 0; i < totalExercises; i++) {
+                // 只要有一个没勾，就不是全部完成
+                if (!userData[selectedDateStr].items[i]) {
+                    allChecked = false;
+                    break;
+                }
+            }
+
+            // 如果全部勾选了，并且当前状态还没显示“完成”，则自动触发完成
+            if (allChecked && !userData[selectedDateStr].done) {
+                toggleDayFinish(); // 这会自动把按钮变绿，并在0.4秒后关闭弹窗
+            }
+        }
+        // --- 新增代码 END ---
+
+        saveData();
+    }
+
+    function toggleDayFinish() {
+        if (!userData[selectedDateStr]) userData[selectedDateStr] = { items: [], done: false };
+        const newState = !userData[selectedDateStr].done;
+        userData[selectedDateStr].done = newState;
+        updateBtnState(newState);
+        saveData(); 
+        if (newState) setTimeout(() => closeModal(), 400);
+    }
+
+    function updateBtnState(isDone) {
+        const btn = document.getElementById('mBtn');
+        if (isDone) {
+            btn.innerText = "已完成 (点击撤销)";
+            btn.className = "action-btn btn-completed";
+        } else {
+            btn.innerText = "完成今日打卡";
+            btn.className = "action-btn btn-done";
+        }
+    }
+
+    // Init
+    renderDashboard();
+    renderCalendar();
+
+</script>
+</body>
+</html>
